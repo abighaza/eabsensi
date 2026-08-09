@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E-Absensi Pintar | SMPN 162 Jakarta</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- FontAwesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- Google Fonts Inter -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Chart.js & QR Scanner -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  </head>
+  <body>
+    <!-- HALAMAN LOGIN -->
+    <section id="login-page" class="auth-wrapper">
+      <div class="login-card">
+        <div class="login-header">
+          <!-- Logo SMPN 162 -->
+          <div class="logo-badge-img mb-2" style="display: inline-block">
+            <img
+              src="images/logoonsit.png"
+              alt="Logo SMPN 162 Jakarta"
+              style="width: 70px; height: 70px; object-fit: contain"
+            />
+          </div>
+          <h2>E-Absensi SMPN 162</h2>
+          <p>Silakan masuk sesuai hak akses Anda</p>
+        </div>
+        <form id="form-login" onsubmit="handleLogin(event)">
+          <div class="input-group">
+            <label><i class="fa-solid fa-user-shield"></i> Pilih Role</label>
+            <select id="login-role" class="input-control" required>
+              <option value="admin">Administrator</option>
+              <option value="guru">Guru / Wali Kelas</option>
+              <option value="siswa">Siswa</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label><i class="fa-solid fa-id-badge"></i> Username / NISN</label>
+            <input
+              type="text"
+              id="login-user"
+              class="input-control"
+              placeholder="Masukkan ID atau username..."
+              required
+            />
+          </div>
+          <div class="input-group">
+            <label><i class="fa-solid fa-lock"></i> Password</label>
+            <input
+              type="password"
+              id="login-pass"
+              class="input-control"
+              placeholder="••••••••"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary btn-glow w-100">
+            <i class="fa-solid fa-right-to-bracket"></i> Masuk Sistem
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- APLIKASI UTAMA (DASHBOARD WRAPPER) -->
+    <div id="app-wrapper" class="app-layout hidden">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <i class="fa-solid fa-cube"></i> <span>E-ABSENSI</span>
+        </div>
+        <div class="sidebar-user-card">
+          <div class="avatar"><i class="fa-solid fa-user"></i></div>
+          <div class="info">
+            <h4 id="current-username">Nama User</h4>
+            <span id="user-role-badge" class="badge-role">Admin</span>
+          </div>
+        </div>
+        <ul id="nav-links" class="nav-menu">
+          <!-- Navigasi dinamis lewat JS -->
+        </ul>
+        <div class="sidebar-footer">
+          <button onclick="logout()" class="btn btn-danger-soft w-100">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-container">
+        <header class="topbar">
+          <div class="topbar-title">
+            <h2 id="page-title">SMP Negeri 162 Jakarta</h2>
+            <span class="subtitle">Sistem Manajemen Kehadiran Siswa</span>
+          </div>
+          <div class="topbar-actions">
+            <div class="live-clock-badge">
+              <i class="fa-regular fa-clock"></i>
+              <span id="live-clock">00:00:00</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="content-body">
+          <!-- 1. DASHBOARD ADMIN -->
+          <section id="dir-dashboard" class="view-section">
+            <div class="section-header-action">
+              <h3>
+                <i class="fa-solid fa-chart-pie"></i> Ringkasan Hari Ini (<span
+                  id="live-date"
+                  >--/--/----</span
+                >)
+              </h3>
+              <button onclick="refreshDashboard()" class="btn btn-secondary">
+                <i class="fa-solid fa-rotate"></i> Refresh Data
+              </button>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-card card-blue">
+                <div class="icon"><i class="fa-solid fa-users"></i></div>
+                <div class="detail">
+                  <h4>Total Siswa</h4>
+                  <p id="stat-total">0</p>
+                </div>
+              </div>
+              <div class="stat-card card-green">
+                <div class="icon"><i class="fa-solid fa-user-check"></i></div>
+                <div class="detail">
+                  <h4>Hadir</h4>
+                  <p id="stat-hadir">0</p>
+                </div>
+              </div>
+              <div class="stat-card card-orange">
+                <div class="icon"><i class="fa-solid fa-user-clock"></i></div>
+                <div class="detail">
+                  <h4>Sakit</h4>
+                  <p id="stat-sakit">0</p>
+                </div>
+              </div>
+              <div class="stat-card card-cyan">
+                <div class="icon">
+                  <i class="fa-solid fa-envelope-open-text"></i>
+                </div>
+                <div class="detail">
+                  <h4>Izin</h4>
+                  <p id="stat-izin">0</p>
+                </div>
+              </div>
+              <div class="stat-card card-red">
+                <div class="icon"><i class="fa-solid fa-user-xmark"></i></div>
+                <div class="detail">
+                  <h4>Alpa</h4>
+                  <p id="stat-alpa">0</p>
+                </div>
+              </div>
+            </div>
+            <div class="chart-box">
+              <h4>
+                <i class="fa-solid fa-chart-column"></i> Grafik Statistik
+                Kehadiran Minggu Ini
+              </h4>
+              <div class="canvas-wrapper">
+                <canvas id="attendanceChart"></canvas>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. DATA SISWA -->
+          <section id="dir-data-siswa" class="view-section hidden">
+            <div class="card-box">
+              <div class="table-header-flex">
+                <h3>
+                  <i class="fa-solid fa-user-group"></i> Manajemen Data Siswa
+                </h3>
+                <div class="btn-group">
+                  <button
+                    onclick="refreshDataSiswa()"
+                    class="btn btn-secondary"
+                  >
+                    <i class="fa-solid fa-rotate"></i> Refresh
+                  </button>
+                  <button
+                    onclick="openModalTambahSiswa()"
+                    class="btn btn-primary"
+                  >
+                    <i class="fa-solid fa-user-plus"></i> Tambah Siswa
+                  </button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Nama Lengkap</th>
+                      <th>NISN</th>
+                      <th>Kelas</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-siswa-body">
+                    <!-- Diisi JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- MODAL / FORM INPUT TAMBAH SISWA -->
+            <div
+              id="modal-tambah-siswa"
+              class="card-box mt-4 hidden"
+              style="border: 2px dashed #007bff"
+            >
+              <div class="table-header-flex mb-3">
+                <h4>
+                  <i class="fa-solid fa-user-plus"></i> Form Input Data Siswa
+                  Baru
+                </h4>
+                <button
+                  onclick="closeModalTambahSiswa()"
+                  class="btn btn-secondary btn-sm"
+                >
+                  <i class="fa-solid fa-xmark"></i> Tutup
+                </button>
+              </div>
+              <form id="form-tambah-siswa" onsubmit="submitDataSiswa(event)">
+                <div class="input-group mb-3">
+                  <label
+                    ><i class="fa-solid fa-user"></i> Nama Lengkap Siswa</label
+                  >
+                  <input
+                    type="text"
+                    id="input-nama-siswa"
+                    class="input-control"
+                    placeholder="Contoh: Ahmad Fauzan"
+                    required
+                  />
+                </div>
+                <div class="input-group mb-3">
+                  <label><i class="fa-solid fa-id-card"></i> NISN</label>
+                  <input
+                    type="text"
+                    id="input-nisn-siswa"
+                    class="input-control"
+                    placeholder="Masukkan NISN siswa..."
+                    required
+                  />
+                </div>
+                <div class="input-group mb-3">
+                  <label><i class="fa-solid fa-school"></i> Kelas</label>
+                  <select id="input-kelas-siswa" class="input-control" required>
+                    <option value="">Pilih Kelas</option>
+                    <option value="7">Kelas 7</option>
+                    <option value="8">Kelas 8</option>
+                    <option value="9">Kelas 9</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fa-solid fa-floppy-disk"></i> Simpan Data Siswa
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <!-- 3. DATA GURU -->
+          <section id="dir-guru" class="view-section hidden">
+            <div class="card-box">
+              <div class="table-header-flex">
+                <h3>
+                  <i class="fa-solid fa-chalkboard-user"></i> Manajemen Data
+                  Guru
+                </h3>
+                <div class="btn-group">
+                  <button onclick="refreshDataGuru()" class="btn btn-secondary">
+                    <i class="fa-solid fa-rotate"></i> Refresh
+                  </button>
+                  <button
+                    onclick="openModalTambahGuru()"
+                    class="btn btn-primary"
+                  >
+                    <i class="fa-solid fa-user-plus"></i> Tambah Guru
+                  </button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Username</th>
+                      <th>Wali Kelas</th>
+                      <th>Password</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-guru-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- MODAL / FORM INPUT TAMBAH GURU -->
+            <div
+              id="modal-tambah-guru"
+              class="card-box mt-4 hidden"
+              style="border: 2px dashed #28a745"
+            >
+              <div class="table-header-flex mb-3">
+                <h4>
+                  <i class="fa-solid fa-user-plus"></i> Form Input Data Guru
+                  Baru
+                </h4>
+                <button
+                  onclick="closeModalTambahGuru()"
+                  class="btn btn-secondary btn-sm"
+                >
+                  <i class="fa-solid fa-xmark"></i> Tutup
+                </button>
+              </div>
+              <form id="form-tambah-guru" onsubmit="submitDataGuru(event)">
+                <div class="input-group mb-3">
+                  <label
+                    ><i class="fa-solid fa-user-tie"></i> Username / NIP</label
+                  >
+                  <input
+                    type="text"
+                    id="input-username-guru"
+                    class="input-control"
+                    placeholder="Contoh: Budi Santoso"
+                    required
+                  />
+                </div>
+                <div class="input-group mb-3">
+                  <label
+                    ><i class="fa-solid fa-chalkboard"></i> Wali Kelas /
+                    Pengampu</label
+                  >
+                  <input
+                    type="text"
+                    id="input-walikelas-guru"
+                    class="input-control"
+                    placeholder="Contoh: Kelas 8A"
+                    required
+                  />
+                </div>
+                <div class="input-group mb-3">
+                  <label><i class="fa-solid fa-lock"></i> Password Akun</label>
+                  <input
+                    type="password"
+                    id="input-pass-guru"
+                    class="input-control"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-success w-100">
+                  <i class="fa-solid fa-floppy-disk"></i> Simpan Data Guru
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <!-- 4. LAPORAN -->
+          <section id="dir-laporan" class="view-section hidden">
+            <div class="card-box">
+              <h3>
+                <i class="fa-solid fa-file-invoice"></i> Laporan Kehadiran
+                Rekapitulasi
+              </h3>
+              <div class="filter-container">
+                <div class="input-group">
+                  <label>Dari Tanggal</label>
+                  <input type="date" id="lap-from" class="input-control" />
+                </div>
+                <div class="input-group">
+                  <label>Sampai Tanggal</label>
+                  <input type="date" id="lap-to" class="input-control" />
+                </div>
+                <div class="input-group">
+                  <label>Filter Kelas</label>
+                  <select id="lap-kelas" class="input-control">
+                    <option value="">Semua Kelas</option>
+                    <option value="7">Kelas 7</option>
+                    <option value="8">Kelas 8</option>
+                    <option value="9">Kelas 9</option>
+                  </select>
+                </div>
+                <div class="input-group" style="align-self: flex-end">
+                  <button
+                    onclick="filterLaporan()"
+                    class="btn btn-primary w-100"
+                  >
+                    <i class="fa-solid fa-magnifying-glass"></i> Cari
+                  </button>
+                </div>
+              </div>
+              <div class="export-actions mb-3">
+                <button
+                  onclick="exportLaporan('excel')"
+                  class="btn btn-success"
+                >
+                  <i class="fa-solid fa-file-excel"></i> Export Excel
+                </button>
+                <button onclick="exportLaporan('pdf')" class="btn btn-danger">
+                  <i class="fa-solid fa-file-pdf"></i> Export PDF
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-laporan">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Tanggal</th>
+                      <th>Nama</th>
+                      <th>NISN</th>
+                      <th>Kelas</th>
+                      <th>Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- 5. KELOLA ABSEN -->
+          <section id="dir-kelola-absen" class="view-section hidden">
+            <div class="card-box mb-4">
+              <h3>
+                <i class="fa-solid fa-clock-rotate-left"></i> Pengaturan Waktu
+                Absensi
+              </h3>
+              <div class="filter-container">
+                <div class="input-group">
+                  <label>Jam Masuk</label>
+                  <input type="time" id="set-jam-masuk" class="input-control" />
+                </div>
+                <div class="input-group">
+                  <label>Jam Pulang</label>
+                  <input
+                    type="time"
+                    id="set-jam-pulang"
+                    class="input-control"
+                  />
+                </div>
+                <div class="input-group" style="align-self: flex-end">
+                  <button
+                    onclick="simpanPengaturanWaktu()"
+                    class="btn btn-primary w-100"
+                  >
+                    <i class="fa-solid fa-floppy-disk"></i> Simpan
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card-box">
+              <div class="table-header-flex">
+                <h4>
+                  <i class="fa-solid fa-calendar-days"></i> Daftar Hari Libur
+                </h4>
+                <button
+                  onclick="openModalTambahLibur()"
+                  class="btn btn-primary"
+                >
+                  <i class="fa-solid fa-plus"></i> Tambah Libur
+                </button>
+              </div>
+              <table class="modern-table mt-2">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Keterangan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="table-libur-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 6. SCAN ABSENSI -->
+          <section id="dir-scan-absen" class="view-section hidden">
+            <div
+              class="card-box text-center scanner-card"
+              style="
+                max-width: 480px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 16px;
+                padding: 0;
+                overflow: hidden;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+              "
+            >
+              <!-- Header Card Scanner -->
+              <div
+                style="
+                  background-color: #121826;
+                  color: #ffffff;
+                  padding: 16px 20px;
+                  font-weight: 600;
+                  font-size: 1.1rem;
+                  text-align: left;
+                "
+              >
+                Scanner
+              </div>
+
+              <!-- Body Scanner -->
+              <div style="padding: 24px">
+                <!-- Wrapper Kamera dengan Bentuk Persegi Panjang (Landscape) dan Sudut Melengkung -->
+                <div
+                  class="scanner-wrapper"
+                  style="
+                    position: relative;
+                    width: 100%;
+                    max-width: 380px;
+                    height: 260px;
+                    margin: 0 auto;
+                    background: #000;
+                    border-radius: 12px;
+                    overflow: hidden;
+                  "
+                >
+                  <!-- Elemen video reader dari Html5Qrcode -->
+                  <div id="reader" style="width: 100%; height: 100%"></div>
+
+                  <!-- Overlay Garis Siku Penanda Scanner (Menyesuaikan bentuk landscape) -->
+                  <div
+                    style="
+                      position: absolute;
+                      top: 0;
+                      left: 0;
+                      width: 100%;
+                      height: 100%;
+                      pointer-events: none;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    "
+                  >
+                    <div
+                      style="position: relative; width: 240px; height: 180px"
+                    >
+                      <!-- Siku Kiri Atas -->
+                      <div
+                        style="
+                          position: absolute;
+                          top: 0;
+                          left: 0;
+                          width: 30px;
+                          height: 30px;
+                          border-top: 4px solid #ffffff;
+                          border-left: 4px solid #ffffff;
+                          border-top-left-radius: 4px;
+                        "
+                      ></div>
+                      <!-- Siku Kanan Atas -->
+                      <div
+                        style="
+                          position: absolute;
+                          top: 0;
+                          right: 0;
+                          width: 30px;
+                          height: 30px;
+                          border-top: 4px solid #ffffff;
+                          border-right: 4px solid #ffffff;
+                          border-top-right-radius: 4px;
+                        "
+                      ></div>
+                      <!-- Siku Kiri Bawah -->
+                      <div
+                        style="
+                          position: absolute;
+                          bottom: 0;
+                          left: 0;
+                          width: 30px;
+                          height: 30px;
+                          border-bottom: 4px solid #ffffff;
+                          border-left: 4px solid #ffffff;
+                          border-bottom-left-radius: 4px;
+                        "
+                      ></div>
+                      <!-- Siku Kanan Bawah -->
+                      <div
+                        style="
+                          position: absolute;
+                          bottom: 0;
+                          right: 0;
+                          width: 30px;
+                          height: 30px;
+                          border-bottom: 4px solid #ffffff;
+                          border-right: 4px solid #ffffff;
+                          border-bottom-right-radius: 4px;
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tombol Pilihan Kamera & Kembali (Persis seperti referensi) -->
+                <div style="display: flex; gap: 12px; margin-top: 24px">
+                  <button
+                    onclick="switchCamera('environment')"
+                    class="btn"
+                    style="
+                      flex: 1;
+                      background-color: #f4f4f9;
+                      color: #4f46e5;
+                      border: none;
+                      padding: 12px;
+                      border-radius: 10px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+                    "
+                  >
+                    Belakang
+                  </button>
+                  <button
+                    onclick="switchCamera('user')"
+                    class="btn"
+                    style="
+                      flex: 1;
+                      background-color: #faf5ff;
+                      color: #9333ea;
+                      border: none;
+                      padding: 12px;
+                      border-radius: 10px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+                    "
+                  >
+                    Depan
+                  </button>
+                </div>
+                <div style="margin-top: 12px">
+                  <button
+                    onclick="backToDashboard()"
+                    class="btn"
+                    style="
+                      width: 100%;
+                      background-color: #f8fafc;
+                      color: #334155;
+                      border: 1px solid #e2e8f0;
+                      padding: 12px;
+                      border-radius: 10px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+                    "
+                  >
+                    Kembali
+                  </button>
+                </div>
+
+                <div id="scan-result" class="scan-feedback mt-3"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 7. HALAMAN GURU (MONITORING & REKAP) -->
+          <section id="dir-guru-monitoring" class="view-section hidden">
+            <div class="card-box mb-4">
+              <h3>
+                <i class="fa-solid fa-clipboard-list"></i> Monitoring Absensi
+                Siswa Hari Ini
+              </h3>
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Nama Siswa</th>
+                    <th>Status Kehadiran</th>
+                    <th>Aksi Edit</th>
+                  </tr>
+                </thead>
+                <tbody id="table-monitoring-body">
+                  <tr>
+                    <td>Ahmad Fauzan</td>
+                    <td><span class="badge badge-success">Hadir</span></td>
+                    <td>
+                      <button class="btn btn-secondary btn-sm">Ubah</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-box">
+              <h3>
+                <i class="fa-solid fa-file-arrow-down"></i> Rekap Absen Bulanan
+              </h3>
+              <div class="filter-container">
+                <div class="input-group">
+                  <label>Pilih Bulan</label>
+                  <input type="month" id="rekap-bulan" class="input-control" />
+                </div>
+                <div class="input-group" style="align-self: flex-end">
+                  <button
+                    onclick="cetakImportPdfGuru()"
+                    class="btn btn-danger w-100"
+                  >
+                    <i class="fa-solid fa-file-pdf"></i> Cetak / Import PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 8. HALAMAN SISWA (PORTAL) -->
+          <section id="dir-siswa-panel" class="view-section hidden">
+            <div class="grid-siswa-layout">
+              <div class="card-box text-center">
+                <h3>
+                  <i class="fa-solid id-card"></i> Kartu Identitas QR Code
+                </h3>
+                <div class="student-id-card">
+                  <h4 id="siswa-card-nama">Rismawan</h4>
+                  <p id="siswa-card-nisn">NISN: 003829192</p>
+                  <div class="qr-placeholder">
+                    <i
+                      class="fa-solid fa-qrcode"
+                      style="font-size: 100px; color: #333"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="card-box">
+                <h3>Status Kehadiran Hari Ini</h3>
+                <div class="status-box-today">
+                  <span
+                    id="siswa-status-hari-ini"
+                    class="badge badge-success lg"
+                    >HADIR (Tepat Waktu)</span
+                  >
+                </div>
+                <h3 class="mt-4">Rekap Bulanan</h3>
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>Tanggal</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-rekap-siswa">
+                    <tr>
+                      <td>08/08/2026</td>
+                      <td><span class="badge badge-success">Hadir</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <button
+                  onclick="cetakAbsenSiswa()"
+                  class="btn btn-primary mt-3"
+                >
+                  <i class="fa-solid fa-print"></i> Cetak Bukti Absen
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Panggil File JavaScript Terpisah -->
+    <script src="script.js"></script>
+  </body>
+</html>
