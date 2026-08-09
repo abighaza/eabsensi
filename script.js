@@ -1,5 +1,6 @@
 // Konfigurasi URL Web App Google Apps Script
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
+const WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
 
 // Array penampung data lokal
 let dataSiswaList = [];
@@ -24,7 +25,7 @@ function handleLogin(e) {
 
     const prosesDataSiswa = () => {
       const siswaData = dataSiswaList.find(
-        (s) => String(s.nisn).trim() === String(user).trim()
+        (s) => String(s.nisn).trim() === String(user).trim(),
       );
 
       if (siswaData) {
@@ -75,7 +76,11 @@ function setupNavigation(role) {
     ];
   } else if (role === "guru") {
     menus = [
-      { id: "dir-guru-monitoring", name: "Monitoring & Rekap", icon: "fa-clipboard-user" },
+      {
+        id: "dir-guru-monitoring",
+        name: "Monitoring & Rekap",
+        icon: "fa-clipboard-user",
+      },
       { id: "dir-scan-absen", name: "Scan Barcode", icon: "fa-qrcode" },
     ];
   } else if (role === "siswa") {
@@ -93,12 +98,16 @@ function setupNavigation(role) {
 }
 
 function switchView(viewId, element) {
-  document.querySelectorAll(".view-section").forEach((sec) => sec.classList.add("hidden"));
+  document
+    .querySelectorAll(".view-section")
+    .forEach((sec) => sec.classList.add("hidden"));
   const target = document.getElementById(viewId);
   if (target) target.classList.remove("hidden");
 
   if (element) {
-    document.querySelectorAll(".nav-menu li").forEach((li) => li.classList.remove("active"));
+    document
+      .querySelectorAll(".nav-menu li")
+      .forEach((li) => li.classList.remove("active"));
     element.parentElement.classList.add("active");
   }
 }
@@ -109,7 +118,12 @@ setInterval(() => {
   const clockEl = document.getElementById("live-clock");
   const dateEl = document.getElementById("live-date");
   if (clockEl) clockEl.innerText = now.toLocaleTimeString();
-  if (dateEl) dateEl.innerText = now.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+  if (dateEl)
+    dateEl.innerText = now.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
 }, 1000);
 
 // --- 4. INISIALISASI HALAMAN & GRAFIK ---
@@ -167,3 +181,108 @@ function refreshDashboard() {
   loadDataGuruDariServer();
   alert("Data dashboard berhasil diperbarui!");
 }
+// --- 6. FUNGSI TAMBAH DATA (SISWA & GURU) ---
+function submitDataSiswa(e) {
+  e.preventDefault();
+  const nama = document.getElementById("input-nama-siswa").value;
+  const nisn = document.getElementById("input-nisn-siswa").value;
+  const kelas = document.getElementById("input-kelas-siswa").value;
+
+  const payload = { action: "tambahSiswa", nama, nisn, kelas };
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(() => {
+    alert("Data Siswa Berhasil Disimpan!");
+    document.getElementById("form-tambah-siswa").reset();
+    closeModalTambahSiswa();
+    loadDataSiswaDariServer(); // Refresh tabel
+  });
+}
+
+function submitDataGuru(e) {
+  e.preventDefault();
+  const username = document.getElementById("input-username-guru").value;
+  const walikelas = document.getElementById("input-walikelas-guru").value;
+  const password = document.getElementById("input-pass-guru").value;
+
+  const payload = { action: "tambahGuru", username, walikelas, password };
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(() => {
+    alert("Data Guru Berhasil Disimpan!");
+    document.getElementById("form-tambah-guru").reset();
+    closeModalTambahGuru();
+    loadDataGuruDariServer(); // Refresh tabel
+  });
+}
+
+// --- 7. FUNGSI SCANNER ---
+let html5QrCode = null;
+
+function initScanner() {
+  const scanSection = document.getElementById("dir-scan-absen");
+  if (scanSection && !scanSection.classList.contains("hidden")) {
+    if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+    html5QrCode
+      .start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          alert("Berhasil Scan: " + decodedText);
+          kirimDataAbsenOtomatis(decodedText);
+        },
+      )
+      .catch((err) => console.error("Kamera gagal:", err));
+  } else if (html5QrCode) {
+    html5QrCode.stop().catch((err) => console.log(err));
+  }
+}
+
+function kirimDataAbsenOtomatis(nisn) {
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "simpanAbsen",
+      nisn: nisn,
+      keterangan: "Hadir",
+    }),
+  }).then(() => console.log("Absen tersimpan"));
+}
+
+function switchCamera(mode) {
+  if (html5QrCode) html5QrCode.stop().then(() => startScanner(mode));
+}
+
+// --- 8. FUNGSI MODAL & HELPERS ---
+function openModalTambahSiswa() {
+  document.getElementById("modal-tambah-siswa").classList.remove("hidden");
+}
+function closeModalTambahSiswa() {
+  document.getElementById("modal-tambah-siswa").classList.add("hidden");
+}
+function openModalTambahGuru() {
+  document.getElementById("modal-tambah-guru").classList.remove("hidden");
+}
+function closeModalTambahGuru() {
+  document.getElementById("modal-tambah-guru").classList.add("hidden");
+}
+function backToDashboard() {
+  switchView("dir-dashboard");
+}
+
+// Observer untuk Scanner (agar otomatis nyala saat menu dipilih)
+const observer = new MutationObserver(() => initScanner());
+const scanSection = document.getElementById("dir-scan-absen");
+if (scanSection)
+  observer.observe(scanSection, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
