@@ -106,9 +106,9 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Render awal tabel kosong/data lokal
-  renderTabelSiswa();
-  renderTabelGuru();
+  // Ambil data dari server (Spreadsheet) saat aplikasi dimuat
+  loadDataGuruDariServer();
+  loadDataSiswaDariServer();
 
   // Observer untuk mendeteksi perubahan tampilan section Scan Absen
   const scanSection = document.getElementById("dir-scan-absen");
@@ -122,6 +122,27 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// --- FUNGSI AMBIL DATA DARI SPREADSHEET ---
+function loadDataGuruDariServer() {
+  fetch(`${WEB_APP_URL}?action=getGuru`)
+    .then((res) => res.json())
+    .then((data) => {
+      dataGuruList = data;
+      renderTabelGuru();
+    })
+    .catch((err) => console.error("Gagal memuat data guru:", err));
+}
+
+function loadDataSiswaDariServer() {
+  fetch(`${WEB_APP_URL}?action=getSiswa`)
+    .then((res) => res.json())
+    .then((data) => {
+      dataSiswaList = data;
+      renderTabelSiswa();
+    })
+    .catch((err) => console.error("Gagal memuat data siswa:", err));
+}
 
 // --- FUNGSI FORM INPUT SISWA ---
 function openModalTambahSiswa() {
@@ -204,8 +225,8 @@ function hapusSiswa(index) {
 }
 
 function refreshDataSiswa() {
-  renderTabelSiswa();
-  alert("Data siswa dimuat ulang!");
+  loadDataSiswaDariServer();
+  alert("Data siswa dimuat ulang dari server!");
 }
 
 // --- FUNGSI FORM INPUT GURU ---
@@ -289,8 +310,8 @@ function hapusGuru(index) {
 }
 
 function refreshDataGuru() {
-  renderTabelGuru();
-  alert("Data guru dimuat ulang!");
+  loadDataGuruDariServer();
+  alert("Data guru dimuat ulang dari server!");
 }
 
 // --- INTEGRASI QR CODE SCANNER & KONTROL KAMERA ---
