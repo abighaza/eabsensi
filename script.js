@@ -1,3 +1,6 @@
+// Konfigurasi URL Web App Google Apps Script Anda
+const WEB_APP_URL = "MASUKKAN_URL_WEB_APP_ANDA_DISINI";
+
 // Navigasi & Role Management
 let currentUser = null;
 
@@ -128,11 +131,31 @@ function submitDataSiswa(e) {
   const nisn = document.getElementById("input-nisn-siswa").value;
   const kelas = document.getElementById("input-kelas-siswa").value;
 
-  alert(
-    `Data Siswa Berhasil Disimpan!\nNama: ${nama}\nNISN: ${nisn}\nKelas: ${kelas}`,
-  );
-  document.getElementById("form-tambah-siswa").reset();
-  closeModalTambahSiswa();
+  // Kirim data ke Google Sheets via Apps Script
+  const payload = {
+    action: "tambahSiswa",
+    nama: nama,
+    nisn: nisn,
+    kelas: kelas,
+  };
+
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then(() => {
+      alert(
+        `Data Siswa Berhasil Disimpan ke Spreadsheet!\nNama: ${nama}\nNISN: ${nisn}\nKelas: ${kelas}`,
+      );
+      document.getElementById("form-tambah-siswa").reset();
+      closeModalTambahSiswa();
+    })
+    .catch((err) => {
+      console.error("Gagal menyimpan data siswa:", err);
+      alert("Terjadi kesalahan saat menyimpan data ke server.");
+    });
 }
 
 // --- FUNGSI FORM INPUT GURU ---
@@ -150,12 +173,33 @@ function submitDataGuru(e) {
   e.preventDefault();
   const username = document.getElementById("input-username-guru").value;
   const walikelas = document.getElementById("input-walikelas-guru").value;
+  const password = document.getElementById("input-pass-guru").value;
 
-  alert(
-    `Data Guru Berhasil Disimpan!\nUsername/NIP: ${username}\nWali Kelas: ${walikelas}`,
-  );
-  document.getElementById("form-tambah-guru").reset();
-  closeModalTambahGuru();
+  // Kirim data ke Google Sheets via Apps Script
+  const payload = {
+    action: "tambahGuru",
+    username: username,
+    walikelas: walikelas,
+    password: password,
+  };
+
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then(() => {
+      alert(
+        `Data Guru Berhasil Disimpan ke Spreadsheet!\nUsername/NIP: ${username}\nWali Kelas: ${walikelas}`,
+      );
+      document.getElementById("form-tambah-guru").reset();
+      closeModalTambahGuru();
+    })
+    .catch((err) => {
+      console.error("Gagal menyimpan data guru:", err);
+      alert("Terjadi kesalahan saat menyimpan data ke server.");
+    });
 }
 
 // --- INTEGRASI QR CODE SCANNER & KONTROL KAMERA ---
@@ -206,10 +250,13 @@ function runScannerStart(facingMode, config) {
         if (resEl) {
           resEl.innerHTML = `
           <div class="alert alert-success p-2" style="background: #d4edda; color: #155724; border-radius: 5px;">
-              <i class="fa-solid fa-check-circle"></i> Berhasil Absen! ID: <strong>${decodedText}</strong>
+              <i class="fa-solid fa-check-circle"></i> Berhasil Absen! ID/NISN: <strong>${decodedText}</strong>
           </div>
         `;
         }
+
+        // Kirim hasil scan QR (Absen) ke Google Apps Script / Spreadsheet
+        kirimDataAbsenOtomatis(decodedText);
       },
       (errorMessage) => {},
     )
@@ -223,6 +270,30 @@ function runScannerStart(facingMode, config) {
         </div>
       `;
       }
+    });
+}
+
+// Fungsi helper untuk mengirim data absen hasil scan ke Google Apps Script
+function kirimDataAbsenOtomatis(nisn) {
+  const payload = {
+    action: "simpanAbsen",
+    nama: "Siswa (" + nisn + ")", // Bisa disesuaikan jika ada fungsi lookup data siswa
+    nisn: nisn,
+    kelas: "-",
+    keterangan: "Hadir",
+  };
+
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then(() => {
+      console.log("Absen berhasil dikirim ke Spreadsheet untuk NISN:", nisn);
+    })
+    .catch((err) => {
+      console.error("Gagal mengirim data absen:", err);
     });
 }
 
