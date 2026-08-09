@@ -158,36 +158,68 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // --- 5. AMBIL DATA DARI SERVER (SISWA & GURU) ---
+// --- AMBIL DATA DARI SERVER (MENGATASI CORS) ---
 function loadDataSiswaDariServer() {
   fetch(`${WEB_APP_URL}?action=getSiswa`, {
     method: "GET",
-    redirect: "follow",
+    mode: "no-cors", // Menggunakan no-cors agar lolos blokiran browser
   })
+    .then(() => {
+      // Karena mode no-cors membuat respons menjadi opaque,
+      // kita gunakan URL asli dengan JSONP atau fetch terpisah lewat JSONP callback.
+      // Solusi alternatif paling stabil di Google Apps Script tanpa plugin adalah sbb:
+      return fetch(
+        `https://api.allorigins.win/get?url=` +
+          encodeURIComponent(`${WEB_APP_URL}?action=getSiswa`),
+      );
+    })
     .then((res) => res.json())
-    .then((data) => {
+    .then((response) => {
+      const data = JSON.parse(response.contents);
       dataSiswaList = data;
       renderTabelSiswa();
       const statTotal = document.getElementById("stat-total");
       if (statTotal) statTotal.innerText = data.length;
     })
     .catch((err) => {
-      console.warn("Catatan fetch siswa:", err);
+      console.warn("Gagal load siswa via proxy, mencoba cara langsung...", err);
+      // Fallback langsung jika proxy bermasalah
+      fallbackFetchSiswa();
     });
 }
 
 function loadDataGuruDariServer() {
-  fetch(`${WEB_APP_URL}?action=getGuru`, {
-    method: "GET",
-    redirect: "follow",
-  })
+  fetch(
+    `https://api.allorigins.win/get?url=` +
+      encodeURIComponent(`${WEB_APP_URL}?action=getGuru`),
+  )
     .then((res) => res.json())
-    .then((data) => {
+    .then((response) => {
+      const data = JSON.parse(response.contents);
       dataGuruList = data;
       renderTabelGuru();
     })
     .catch((err) => console.error("Gagal load guru:", err));
 }
 
+function fallbackFetchSiswa() {
+  fetch(`${WEB_APP_URL}?action=getSiswa`)
+    .then((res) => res.json())
+    .then((data) => {
+      dataSiswaList = data;
+      renderTabelSiswa();
+    })
+    .catch((e) => console.log(e));
+}
+function fallbackFetchGuru() {
+  fetch(`${WEB_APP_URL}?action=getGuru`)
+    .then((res) => res.json())
+    .then((data) => {
+      dataGuruList = data;
+      renderTabelGuru();
+    })
+    .catch((e) => console.log(e));
+}
 // --- RENDER TABEL ---
 function renderTabelSiswa() {
   const tbody = document.getElementById("table-siswa-body");
