@@ -196,17 +196,27 @@ function submitDataSiswa(e) {
   const kelas = document.getElementById("input-kelas-siswa").value;
 
   const payload = { action: "tambahSiswa", nama, nisn, kelas };
+
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  }).then(() => {
-    alert("Data Siswa Berhasil Disimpan!");
-    document.getElementById("form-tambah-siswa").reset();
-    closeModalTambahSiswa();
-    loadDataSiswaDariServer(); // Refresh tabel
-  });
+  })
+    .then(() => {
+      alert("Data Siswa Berhasil Disimpan!");
+      document.getElementById("form-tambah-siswa").reset();
+      closeModalTambahSiswa();
+
+      // BERIKAN JEDA SEDIKIT LALU TARIK DATA TERBARU DARI SERVER
+      setTimeout(() => {
+        loadDataSiswaDariServer();
+      }, 1000); // Jeda 1 detik agar Google Sheets sempat memproses baris baru
+    })
+    .catch((err) => {
+      console.error("Gagal menyimpan data siswa:", err);
+      alert("Terjadi kesalahan saat menyimpan data ke server.");
+    });
 }
 
 function submitDataGuru(e) {
@@ -216,17 +226,25 @@ function submitDataGuru(e) {
   const password = document.getElementById("input-pass-guru").value;
 
   const payload = { action: "tambahGuru", username, walikelas, password };
+
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  }).then(() => {
-    alert("Data Guru Berhasil Disimpan!");
-    document.getElementById("form-tambah-guru").reset();
-    closeModalTambahGuru();
-    loadDataGuruDariServer(); // Refresh tabel
-  });
+  })
+    .then(() => {
+      alert("Data Guru Berhasil Disimpan!");
+      document.getElementById("form-tambah-guru").reset();
+      closeModalTambahGuru();
+
+      setTimeout(() => {
+        loadDataGuruDariServer();
+      }, 1000);
+    })
+    .catch((err) => {
+      console.error("Gagal menyimpan data guru:", err);
+    });
 }
 
 // --- 7. FUNGSI SCANNER ---
