@@ -161,17 +161,38 @@ function loadDataSiswaDariServer() {
     .then((res) => res.json())
     .then((data) => {
       dataSiswaList = data;
-
-      // 1. Perbarui jumlah total siswa di dashboard
+      renderTabelSiswa(); // Render ke HTML tabel
       const statTotal = document.getElementById("stat-total");
       if (statTotal) statTotal.innerText = data.length;
-
-      // 2. Render data ke dalam tabel siswa secara otomatis
-      if (typeof renderTabelSiswa === "function") {
-        renderTabelSiswa();
-      }
     })
     .catch((err) => console.error("Gagal load siswa:", err));
+}
+
+function renderTabelSiswa() {
+  const tbody = document.getElementById("table-siswa-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!dataSiswaList || dataSiswaList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 15px;">Belum ada data siswa.</td></tr>`;
+    return;
+  }
+
+  dataSiswaList.forEach((siswa, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${siswa.nama}</td>
+        <td>${siswa.nisn}</td>
+        <td>${siswa.kelas}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="hapusSiswa(${index})">
+            <i class="fa-solid fa-trash"></i> Hapus
+          </button>
+        </td>
+      </tr>
+    `;
+  });
 }
 
 function loadDataGuruDariServer() {
@@ -366,4 +387,13 @@ function renderTabelSiswa() {
       </tr>
     `;
   });
+}
+function refreshDataSiswa() {
+  loadDataSiswaDariServer();
+  alert("Data siswa berhasil dimuat ulang dari server!");
+}
+
+function refreshDataGuru() {
+  loadDataGuruDariServer();
+  alert("Data guru berhasil dimuat ulang dari server!");
 }
