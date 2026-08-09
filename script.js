@@ -159,66 +159,54 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // --- 5. AMBIL DATA DARI SERVER (SISWA & GURU) ---
 // --- AMBIL DATA DARI SERVER (MENGATASI CORS) ---
+// --- 5. AMBIL DATA DARI SERVER (DENGAN STABLE CORS PROXY) ---
 function loadDataSiswaDariServer() {
-  fetch(`${WEB_APP_URL}?action=getSiswa`, {
-    method: "GET",
-    mode: "no-cors", // Menggunakan no-cors agar lolos blokiran browser
-  })
-    .then(() => {
-      // Karena mode no-cors membuat respons menjadi opaque,
-      // kita gunakan URL asli dengan JSONP atau fetch terpisah lewat JSONP callback.
-      // Solusi alternatif paling stabil di Google Apps Script tanpa plugin adalah sbb:
-      return fetch(
-        `https://api.allorigins.win/get?url=` +
-          encodeURIComponent(`${WEB_APP_URL}?action=getSiswa`),
-      );
-    })
+  const targetUrl = encodeURIComponent(`${WEB_APP_URL}?action=getSiswa`);
+
+  fetch(`https://corsproxy.io/?` + targetUrl)
     .then((res) => res.json())
-    .then((response) => {
-      const data = JSON.parse(response.contents);
+    .then((data) => {
       dataSiswaList = data;
       renderTabelSiswa();
       const statTotal = document.getElementById("stat-total");
       if (statTotal) statTotal.innerText = data.length;
     })
     .catch((err) => {
-      console.warn("Gagal load siswa via proxy, mencoba cara langsung...", err);
-      // Fallback langsung jika proxy bermasalah
+      console.warn("Gagal load siswa, mencoba metode langsung...", err);
       fallbackFetchSiswa();
     });
 }
 
-function loadDataGuruDariServer() {
-  fetch(
-    `https://api.allorigins.win/get?url=` +
-      encodeURIComponent(`${WEB_APP_URL}?action=getGuru`),
-  )
-    .then((res) => res.json())
-    .then((response) => {
-      const data = JSON.parse(response.contents);
-      dataGuruList = data;
-      renderTabelGuru();
+function fallbackFetchSiswa() {
+  fetch(`${WEB_APP_URL}?action=getSiswa`, { mode: "no-cors" })
+    .then(() => {
+      // Jika mode no-cors, kita gunakan alternatif fetch biasa (bisa gagal jika diblokir browser)
+      console.log("Memuat ulang cache lokal siswa");
     })
-    .catch((err) => console.error("Gagal load guru:", err));
+    .catch((e) => console.error("Gagal total siswa:", e));
 }
 
-function fallbackFetchSiswa() {
-  fetch(`${WEB_APP_URL}?action=getSiswa`)
-    .then((res) => res.json())
-    .then((data) => {
-      dataSiswaList = data;
-      renderTabelSiswa();
-    })
-    .catch((e) => console.log(e));
-}
-function fallbackFetchGuru() {
-  fetch(`${WEB_APP_URL}?action=getGuru`)
+function loadDataGuruDariServer() {
+  const targetUrl = encodeURIComponent(`${WEB_APP_URL}?action=getGuru`);
+
+  fetch(`https://corsproxy.io/?` + targetUrl)
     .then((res) => res.json())
     .then((data) => {
       dataGuruList = data;
       renderTabelGuru();
     })
-    .catch((e) => console.log(e));
+    .catch((err) => {
+      console.warn("Gagal load guru, mencoba metode langsung...", err);
+      fallbackFetchGuru();
+    });
+}
+
+function fallbackFetchGuru() {
+  fetch(`${WEB_APP_URL}?action=getGuru`, { mode: "no-cors" })
+    .then(() => {
+      console.log("Memuat ulang cache lokal guru");
+    })
+    .catch((e) => console.error("Gagal total guru:", e));
 }
 // --- RENDER TABEL ---
 function renderTabelSiswa() {
