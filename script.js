@@ -1,5 +1,10 @@
 // Konfigurasi URL Web App Google Apps Script Anda
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
+const WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
+
+// Array penampung data lokal untuk tabel
+let dataSiswaList = [];
+let dataGuruList = [];
 
 // Navigasi & Role Management
 let currentUser = null;
@@ -101,6 +106,10 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Render awal tabel kosong/data lokal
+  renderTabelSiswa();
+  renderTabelGuru();
+
   // Observer untuk mendeteksi perubahan tampilan section Scan Absen
   const scanSection = document.getElementById("dir-scan-absen");
   if (scanSection) {
@@ -131,7 +140,11 @@ function submitDataSiswa(e) {
   const nisn = document.getElementById("input-nisn-siswa").value;
   const kelas = document.getElementById("input-kelas-siswa").value;
 
-  // Kirim data ke Google Sheets via Apps Script
+  // 1. Masukkan ke array lokal & render tabel agar langsung muncul
+  dataSiswaList.push({ nama, nisn, kelas });
+  renderTabelSiswa();
+
+  // 2. Kirim data ke Google Sheets via Apps Script
   const payload = {
     action: "tambahSiswa",
     nama: nama,
@@ -158,6 +171,43 @@ function submitDataSiswa(e) {
     });
 }
 
+function renderTabelSiswa() {
+  const tbody = document.getElementById("table-siswa-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (dataSiswaList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 15px;">Belum ada data siswa.</td></tr>`;
+    return;
+  }
+
+  dataSiswaList.forEach((siswa, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${siswa.nama}</td>
+        <td>${siswa.nisn}</td>
+        <td>${siswa.kelas}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="hapusSiswa(${index})">
+            <i class="fa-solid fa-trash"></i> Hapus
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function hapusSiswa(index) {
+  dataSiswaList.splice(index, 1);
+  renderTabelSiswa();
+}
+
+function refreshDataSiswa() {
+  renderTabelSiswa();
+  alert("Data siswa dimuat ulang!");
+}
+
 // --- FUNGSI FORM INPUT GURU ---
 function openModalTambahGuru() {
   const modal = document.getElementById("modal-tambah-guru");
@@ -175,7 +225,11 @@ function submitDataGuru(e) {
   const walikelas = document.getElementById("input-walikelas-guru").value;
   const password = document.getElementById("input-pass-guru").value;
 
-  // Kirim data ke Google Sheets via Apps Script
+  // 1. Masukkan ke array lokal & render tabel agar langsung muncul
+  dataGuruList.push({ username, walikelas, password });
+  renderTabelGuru();
+
+  // 2. Kirim data ke Google Sheets via Apps Script
   const payload = {
     action: "tambahGuru",
     username: username,
@@ -200,6 +254,43 @@ function submitDataGuru(e) {
       console.error("Gagal menyimpan data guru:", err);
       alert("Terjadi kesalahan saat menyimpan data ke server.");
     });
+}
+
+function renderTabelGuru() {
+  const tbody = document.getElementById("table-guru-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (dataGuruList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 15px;">Belum ada data guru.</td></tr>`;
+    return;
+  }
+
+  dataGuruList.forEach((guru, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${guru.username}</td>
+        <td>${guru.walikelas}</td>
+        <td>••••••••</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="hapusGuru(${index})">
+            <i class="fa-solid fa-trash"></i> Hapus
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function hapusGuru(index) {
+  dataGuruList.splice(index, 1);
+  renderTabelGuru();
+}
+
+function refreshDataGuru() {
+  renderTabelGuru();
+  alert("Data guru dimuat ulang!");
 }
 
 // --- INTEGRASI QR CODE SCANNER & KONTROL KAMERA ---
@@ -277,7 +368,7 @@ function runScannerStart(facingMode, config) {
 function kirimDataAbsenOtomatis(nisn) {
   const payload = {
     action: "simpanAbsen",
-    nama: "Siswa (" + nisn + ")", // Bisa disesuaikan jika ada fungsi lookup data siswa
+    nama: "Siswa (" + nisn + ")",
     nisn: nisn,
     kelas: "-",
     keterangan: "Hadir",
@@ -314,12 +405,6 @@ function backToDashboard() {
 // Fungsi Template Bawaan Lainnya
 function refreshDashboard() {
   alert("Data dashboard diperbarui!");
-}
-function refreshDataSiswa() {
-  alert("Data siswa dimuat ulang!");
-}
-function refreshDataGuru() {
-  alert("Data guru dimuat ulang!");
 }
 function filterLaporan() {
   alert("Memfilter laporan...");
