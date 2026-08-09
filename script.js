@@ -1,5 +1,5 @@
 // Konfigurasi URL Web App Google Apps Script Anda
-const WEB_APP_URL = "MASUKKAN_URL_WEB_APP_ANDA_DISINI";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
 
 // Navigasi & Role Management
 let currentUser = null;
