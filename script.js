@@ -20,6 +20,14 @@ function handleLogin(e) {
   document.getElementById("user-role-badge").innerText = role.toUpperCase();
   document.getElementById("current-username").innerText = user;
 
+  // Jika role yang login adalah siswa, perbarui kartu identitas QR Code secara dinamis
+  if (role === "siswa") {
+    const namaCard = document.getElementById("siswa-card-nama");
+    const nisnCard = document.getElementById("siswa-card-nisn");
+    if (namaCard) namaCard.innerText = user;
+    if (nisnCard) nisnCard.innerText = "NISN: " + user;
+  }
+
   setupNavigation(role);
 }
 
@@ -123,7 +131,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- FUNGSI AMBIL DATA DARI SPREADSHEET ---
+// --- FUNGSI AMBIL DATA DARI SPREADSHEET (GET) ---
 function loadDataGuruDariServer() {
   fetch(`${WEB_APP_URL}?action=getGuru`)
     .then((res) => res.json())
@@ -226,7 +234,7 @@ function hapusSiswa(index) {
 
 function refreshDataSiswa() {
   loadDataSiswaDariServer();
-  alert("Data siswa dimuat ulang dari server!");
+  alert("Data siswa berhasil dimuat ulang dari server!");
 }
 
 // --- FUNGSI FORM INPUT GURU ---
@@ -311,7 +319,7 @@ function hapusGuru(index) {
 
 function refreshDataGuru() {
   loadDataGuruDariServer();
-  alert("Data guru dimuat ulang dari server!");
+  alert("Data guru berhasil dimuat ulang dari server!");
 }
 
 // --- INTEGRASI QR CODE SCANNER & KONTROL KAMERA ---
