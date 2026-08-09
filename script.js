@@ -20,12 +20,22 @@ function handleLogin(e) {
   document.getElementById("user-role-badge").innerText = role.toUpperCase();
   document.getElementById("current-username").innerText = user;
 
-  // Jika role yang login adalah siswa, perbarui kartu identitas QR Code secara dinamis
+  // Jika role yang login adalah siswa, perbarui kartu identitas QR Code secara dinamis berdasarkan data siswa
   if (role === "siswa") {
+    const siswaData = dataSiswaList.find(
+      (s) => s.nisn === user || s.nama.toLowerCase() === user.toLowerCase(),
+    );
+
     const namaCard = document.getElementById("siswa-card-nama");
     const nisnCard = document.getElementById("siswa-card-nisn");
-    if (namaCard) namaCard.innerText = user;
-    if (nisnCard) nisnCard.innerText = "NISN: " + user;
+
+    if (siswaData) {
+      if (namaCard) namaCard.innerText = siswaData.nama;
+      if (nisnCard) nisnCard.innerText = "NISN: " + siswaData.nisn;
+    } else {
+      if (namaCard) namaCard.innerText = user;
+      if (nisnCard) nisnCard.innerText = "NISN: " + user;
+    }
   }
 
   setupNavigation(role);
