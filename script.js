@@ -149,23 +149,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // --- FUNGSI AMBIL DATA DARI SPREADSHEET (GET) ---
 function loadDataGuruDariServer() {
-  fetch(`${WEB_APP_URL}?action=getGuru`)
+  fetch(`${WEB_APP_URL}?action=getGuru`, {
+    method: "GET",
+    redirect: "follow"
+  })
     .then((res) => res.json())
     .then((data) => {
       dataGuruList = data;
       renderTabelGuru();
     })
-    .catch((err) => console.error("Gagal memuat data guru:", err));
+    .catch((err) => console.warn("Catatan fetch guru:", err));
 }
 
 function loadDataSiswaDariServer() {
-  fetch(`${WEB_APP_URL}?action=getSiswa`)
+  fetch(`${WEB_APP_URL}?action=getSiswa`, {
+    method: "GET",
+    redirect: "follow"
+  })
     .then((res) => res.json())
     .then((data) => {
       dataSiswaList = data;
       renderTabelSiswa();
     })
-    .catch((err) => console.error("Gagal memuat data siswa:", err));
+    .catch((err) => console.warn("Catatan fetch siswa:", err));
 }
 
 // --- FUNGSI FORM INPUT SISWA ---
