@@ -1,10 +1,10 @@
-// Konfigurasi URL Web App Google Apps Script
-const WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
+// Konfigurasi URL Web App Google Apps Script Anda (Cukup tulis sekali di sini)
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
 
-// Array penampung data lokal
+// Array penampung data lokal untuk tabel
 let dataSiswaList = [];
 let dataGuruList = [];
+let currentUser = null;
 
 // --- FUNGSI LOGIN ---
 function handleLogin(e) {
@@ -12,6 +12,7 @@ function handleLogin(e) {
   const role = document.getElementById("login-role").value;
   const user = document.getElementById("login-user").value;
 
+  currentUser = { role, user };
   document.getElementById("login-page").classList.add("hidden");
   document.getElementById("app-wrapper").classList.remove("hidden");
   document.getElementById("user-role-badge").innerText = role.toUpperCase();
@@ -23,14 +24,15 @@ function handleLogin(e) {
 
     const prosesDataSiswa = () => {
       const siswaData = dataSiswaList.find(
-        (s) => String(s.nisn).trim() === String(user).trim(),
+        (s) => String(s.nisn).trim() === String(user).trim()
       );
+
       if (siswaData) {
         if (namaCard) namaCard.innerText = siswaData.nama;
         if (nisnCard) nisnCard.innerText = "NISN: " + siswaData.nisn;
         document.getElementById("current-username").innerText = siswaData.nama;
       } else {
-        if (namaCard) namaCard.innerText = "Siswa (NISN: " + user + ")";
+        if (namaCard) namaCard.innerText = "Data Siswa Tidak Ditemukan";
         if (nisnCard) nisnCard.innerText = "NISN: " + user;
       }
     };
@@ -43,18 +45,27 @@ function handleLogin(e) {
           dataSiswaList = data;
           prosesDataSiswa();
         })
-        .catch(() => prosesDataSiswa());
+        .catch((err) => {
+          console.error("Gagal memuat data siswa:", err);
+          prosesDataSiswa();
+        });
     } else {
       prosesDataSiswa();
     }
   }
+
   setupNavigation(role);
 }
 
-// --- FUNGSI NAVIGASI ---
+function logout() {
+  location.reload();
+}
+
+// --- NAVIGASI ---
 function setupNavigation(role) {
   const navLinks = document.getElementById("nav-links");
   navLinks.innerHTML = "";
+
   let menus = [];
   if (role === "admin") {
     menus = [
@@ -67,11 +78,7 @@ function setupNavigation(role) {
     ];
   } else if (role === "guru") {
     menus = [
-      {
-        id: "dir-guru-monitoring",
-        name: "Monitoring & Rekap",
-        icon: "fa-clipboard-user",
-      },
+      { id: "dir-guru-monitoring", name: "Monitoring & Rekap", icon: "fa-clipboard-user" },
       { id: "dir-scan-absen", name: "Scan Barcode", icon: "fa-qrcode" },
     ];
   } else if (role === "siswa") {
@@ -84,31 +91,29 @@ function setupNavigation(role) {
     if (index === 0) li.classList.add("active");
     navLinks.appendChild(li);
   });
+
   if (menus.length > 0) switchView(menus[0].id);
 }
 
 function switchView(viewId, element) {
-  document
-    .querySelectorAll(".view-section")
-    .forEach((sec) => sec.classList.add("hidden"));
-  document.getElementById(viewId).classList.remove("hidden");
+  document.querySelectorAll(".view-section").forEach((sec) => sec.classList.add("hidden"));
+  const target = document.getElementById(viewId);
+  if (target) target.classList.remove("hidden");
+
   if (element) {
-    document
-      .querySelectorAll(".nav-menu li")
-      .forEach((li) => li.classList.remove("active"));
+    document.querySelectorAll(".nav-menu li").forEach((li) => li.classList.remove("active"));
     element.parentElement.classList.add("active");
   }
 }
 
-// --- DATA FETCHING ---
+// --- AMBIL DATA DARI SERVER ---
 function loadDataSiswaDariServer() {
   fetch(`${WEB_APP_URL}?action=getSiswa`, { method: "GET", mode: "cors" })
     .then((res) => res.json())
     .then((data) => {
       dataSiswaList = data;
-      renderTabelSiswa();
     })
-    .catch((err) => console.error("Error load siswa:", err));
+    .catch((err) => console.error("Gagal load data siswa:", err));
 }
 
 function loadDataGuruDariServer() {
@@ -116,15 +121,12 @@ function loadDataGuruDariServer() {
     .then((res) => res.json())
     .then((data) => {
       dataGuruList = data;
-      renderTabelGuru();
     })
-    .catch((err) => console.error("Error load guru:", err));
+    .catch((err) => console.error("Gagal load data guru:", err));
 }
 
-// --- INISIALISASI ---
+// --- INISIALISASI SAAT HALAMAN DIBUKA ---
 window.addEventListener("DOMContentLoaded", () => {
-  loadDataGuruDariServer();
   loadDataSiswaDariServer();
+  loadDataGuruDariServer();
 });
-
-// Sisipkan fungsi lainnya (submit, renderTabel, scan) di sini...
