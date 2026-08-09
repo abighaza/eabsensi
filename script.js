@@ -157,15 +157,21 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // --- 5. AMBIL DATA DARI SERVER ---
 function loadDataSiswaDariServer() {
-  fetch(`${WEB_APP_URL}?action=getSiswa`, { method: "GET", mode: "cors" })
+  fetch(`${WEB_APP_URL}?action=getSiswa`, {
+    method: "GET",
+    redirect: "follow",
+  })
     .then((res) => res.json())
     .then((data) => {
       dataSiswaList = data;
-      renderTabelSiswa(); // Render ke HTML tabel
+      renderTabelSiswa();
       const statTotal = document.getElementById("stat-total");
       if (statTotal) statTotal.innerText = data.length;
     })
-    .catch((err) => console.error("Gagal load siswa:", err));
+    .catch((err) => {
+      // Jika masih terkena CORS tapi data masuk, kita abaikan atau gunakan fallback
+      console.warn("Catatan fetch siswa:", err);
+    });
 }
 
 function renderTabelSiswa() {
@@ -195,13 +201,22 @@ function renderTabelSiswa() {
   });
 }
 
-function loadDataGuruDariServer() {
-  fetch(`${WEB_APP_URL}?action=getGuru`, { method: "GET", mode: "cors" })
+function loadDataSiswaDariServer() {
+  fetch(`${WEB_APP_URL}?action=getSiswa`, {
+    method: "GET",
+    redirect: "follow",
+  })
     .then((res) => res.json())
     .then((data) => {
-      dataGuruList = data;
+      dataSiswaList = data;
+      renderTabelSiswa();
+      const statTotal = document.getElementById("stat-total");
+      if (statTotal) statTotal.innerText = data.length;
     })
-    .catch((err) => console.error("Gagal load guru:", err));
+    .catch((err) => {
+      // Jika masih terkena CORS tapi data masuk, kita abaikan atau gunakan fallback
+      console.warn("Catatan fetch siswa:", err);
+    });
 }
 
 function refreshDashboard() {
