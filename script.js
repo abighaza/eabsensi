@@ -1,12 +1,12 @@
-// Konfigurasi URL Web App Google Apps Script Anda (Cukup tulis sekali di sini)
+// Konfigurasi URL Web App Google Apps Script
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
 
-// Array penampung data lokal untuk tabel
+// Array penampung data lokal
 let dataSiswaList = [];
 let dataGuruList = [];
 let currentUser = null;
 
-// --- FUNGSI LOGIN ---
+// --- 1. FUNGSI LOGIN ---
 function handleLogin(e) {
   if (e) e.preventDefault();
   const role = document.getElementById("login-role").value;
@@ -32,7 +32,7 @@ function handleLogin(e) {
         if (nisnCard) nisnCard.innerText = "NISN: " + siswaData.nisn;
         document.getElementById("current-username").innerText = siswaData.nama;
       } else {
-        if (namaCard) namaCard.innerText = "Data Siswa Tidak Ditemukan";
+        if (namaCard) namaCard.innerText = "Siswa (" + user + ")";
         if (nisnCard) nisnCard.innerText = "NISN: " + user;
       }
     };
@@ -45,10 +45,7 @@ function handleLogin(e) {
           dataSiswaList = data;
           prosesDataSiswa();
         })
-        .catch((err) => {
-          console.error("Gagal memuat data siswa:", err);
-          prosesDataSiswa();
-        });
+        .catch(() => prosesDataSiswa());
     } else {
       prosesDataSiswa();
     }
@@ -61,7 +58,7 @@ function logout() {
   location.reload();
 }
 
-// --- NAVIGASI ---
+// --- 2. NAVIGASI ---
 function setupNavigation(role) {
   const navLinks = document.getElementById("nav-links");
   navLinks.innerHTML = "";
@@ -106,14 +103,54 @@ function switchView(viewId, element) {
   }
 }
 
-// --- AMBIL DATA DARI SERVER ---
+// --- 3. JAM & TANGGAL REALTIME ---
+setInterval(() => {
+  const now = new Date();
+  const clockEl = document.getElementById("live-clock");
+  const dateEl = document.getElementById("live-date");
+  if (clockEl) clockEl.innerText = now.toLocaleTimeString();
+  if (dateEl) dateEl.innerText = now.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+}, 1000);
+
+// --- 4. INISIALISASI HALAMAN & GRAFIK ---
+window.addEventListener("DOMContentLoaded", () => {
+  // Inisialisasi Chart.js Grafik Statistik
+  const ctx = document.getElementById("attendanceChart");
+  if (ctx) {
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Hadir", "Sakit", "Izin", "Alpa"],
+        datasets: [
+          {
+            label: "# Statistik Kehadiran Minggu Ini",
+            data: [120, 5, 2, 3],
+            backgroundColor: ["#2ecc71", "#f1c40f", "#3498db", "#e74c3c"],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+    });
+  }
+
+  // Muat data server
+  loadDataGuruDariServer();
+  loadDataSiswaDariServer();
+});
+
+// --- 5. AMBIL DATA DARI SERVER ---
 function loadDataSiswaDariServer() {
   fetch(`${WEB_APP_URL}?action=getSiswa`, { method: "GET", mode: "cors" })
     .then((res) => res.json())
     .then((data) => {
       dataSiswaList = data;
+      const statTotal = document.getElementById("stat-total");
+      if (statTotal) statTotal.innerText = data.length;
     })
-    .catch((err) => console.error("Gagal load data siswa:", err));
+    .catch((err) => console.error("Gagal load siswa:", err));
 }
 
 function loadDataGuruDariServer() {
@@ -122,11 +159,11 @@ function loadDataGuruDariServer() {
     .then((data) => {
       dataGuruList = data;
     })
-    .catch((err) => console.error("Gagal load data guru:", err));
+    .catch((err) => console.error("Gagal load guru:", err));
 }
 
-// --- INISIALISASI SAAT HALAMAN DIBUKA ---
-window.addEventListener("DOMContentLoaded", () => {
+function refreshDashboard() {
   loadDataSiswaDariServer();
   loadDataGuruDariServer();
-});
+  alert("Data dashboard berhasil diperbarui!");
+}
