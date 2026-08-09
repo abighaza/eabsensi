@@ -1,6 +1,6 @@
 // Konfigurasi URL Web App Google Apps Script
 const WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbzxLmsqlAyzAITexPZkbv5ZepWCF8ZCtVJ2iBI-pAkGrmYeRKgur4r0ZiZ0khKqngHL/exec";
+  "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
 
 // Array penampung data lokal
 let dataSiswaList = [];
@@ -218,7 +218,59 @@ function loadDataSiswaDariServer() {
       console.warn("Catatan fetch siswa:", err);
     });
 }
+// --- FUNGSI LOAD & RENDER DATA GURU ---
+function loadDataGuruDariServer() {
+  fetch(`${WEB_APP_URL}?action=getGuru`, { method: "GET", mode: "cors" })
+    .then((res) => res.json())
+    .then((data) => {
+      dataGuruList = data;
+      renderTabelGuru();
+    })
+    .catch((err) => console.error("Gagal load guru:", err));
+}
 
+function renderTabelGuru() {
+  const tbody = document.getElementById("table-guru-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!dataGuruList || dataGuruList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 15px;">Belum ada data guru.</td></tr>`;
+    return;
+  }
+
+  dataGuruList.forEach((guru, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${guru.username}</td>
+        <td>${guru.walikelas}</td>
+        <td>••••••••</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="hapusGuru(${index})">
+            <i class="fa-solid fa-trash"></i> Hapus
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function refreshDataGuru() {
+  loadDataGuruDariServer();
+  alert("Data guru berhasil dimuat ulang dari server!");
+}
+
+// --- FUNGSI HAPUS LOKAL ---
+function hapusSiswa(index) {
+  dataSiswaList.splice(index, 1);
+  renderTabelSiswa();
+}
+
+function hapusGuru(index) {
+  dataGuruList.splice(index, 1);
+  renderTabelGuru();
+}
 function refreshDashboard() {
   loadDataSiswaDariServer();
   loadDataGuruDariServer();
