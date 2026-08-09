@@ -20,20 +20,26 @@ function handleLogin(e) {
   document.getElementById("user-role-badge").innerText = role.toUpperCase();
   document.getElementById("current-username").innerText = user;
 
-  // Jika role yang login adalah siswa, perbarui kartu identitas QR Code secara dinamis berdasarkan data siswa
+  // Jika role yang login adalah siswa, perbarui kartu identitas QR Code secara dinamis
   if (role === "siswa") {
+    // Mencari data siswa dari array dataSiswaList (yang sudah di-load dari spreadsheet)
+    // Kita mencocokkan input login (user) dengan kolom NISN
     const siswaData = dataSiswaList.find(
-      (s) => s.nisn === user || s.nama.toLowerCase() === user.toLowerCase(),
+      (s) => String(s.nisn).trim() === String(user).trim(),
     );
 
     const namaCard = document.getElementById("siswa-card-nama");
     const nisnCard = document.getElementById("siswa-card-nisn");
 
     if (siswaData) {
+      // Jika data ditemukan di database, tampilkan Nama dan NISN yang benar
       if (namaCard) namaCard.innerText = siswaData.nama;
       if (nisnCard) nisnCard.innerText = "NISN: " + siswaData.nisn;
+      // Update juga nama di sidebar agar sesuai
+      document.getElementById("current-username").innerText = siswaData.nama;
     } else {
-      if (namaCard) namaCard.innerText = user;
+      // Jika data belum ditemukan/belum ter-load
+      if (namaCard) namaCard.innerText = "Siswa (NISN: " + user + ")";
       if (nisnCard) nisnCard.innerText = "NISN: " + user;
     }
   }
