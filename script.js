@@ -244,17 +244,46 @@ function initScanner() {
   }
 }
 
+// --- FUNGSI HELPER UNTUK MENGIRIM DATA ABSEN HASIL SCAN ---
 function kirimDataAbsenOtomatis(nisn) {
+  const cleanNisn = String(nisn).trim();
+  const siswa = dataSiswaList.find((s) => String(s.nisn).trim() === cleanNisn);
+
+  const namaSiswa = siswa ? siswa.nama : "Siswa (" + cleanNisn + ")";
+  const kelasSiswa = siswa ? siswa.kelas : "-";
+
+  const payload = {
+    action: "simpanAbsen",
+    nama: namaSiswa,
+    nisn: cleanNisn,
+    kelas: kelasSiswa,
+    keterangan: "Hadir",
+  };
+
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "simpanAbsen",
-      nisn: nisn,
-      keterangan: "Hadir",
-    }),
-  }).then(() => console.log("Absen tersimpan"));
+    body: JSON.stringify(payload),
+  })
+    .then(() => {
+      console.log(
+        `Absen berhasil dikirim untuk: ${namaSiswa} (${cleanNisn}) - Kelas: ${kelasSiswa}`,
+      );
+      const resEl = document.getElementById("scan-result");
+      if (resEl) {
+        resEl.innerHTML = `
+          <div class="alert alert-success p-2" style="background: #d4edda; color: #155724; border-radius: 5px;">
+              <i class="fa-solid fa-check-circle"></i> Berhasil Absen!<br>
+              <strong>${namaSiswa}</strong> (NISN: ${cleanNisn})<br>
+              Kelas: ${kelasSiswa}
+          </div>
+        `;
+      }
+    })
+    .catch((err) => {
+      console.error("Gagal mengirim data absen:", err);
+    });
 }
 
 function switchCamera(mode) {
