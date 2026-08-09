@@ -17,29 +17,27 @@ function handleLogin(e) {
   currentUser = { role, user };
   document.getElementById("login-page").classList.add("hidden");
   document.getElementById("app-wrapper").classList.remove("hidden");
+  
+  // Update badge sidebar
   document.getElementById("user-role-badge").innerText = role.toUpperCase();
   document.getElementById("current-username").innerText = user;
 
-  // Jika role yang login adalah siswa, perbarui kartu identitas QR Code secara dinamis
+  // Jika siswa login, cari data nama berdasarkan NISN
   if (role === "siswa") {
-    // Mencari data siswa dari array dataSiswaList (yang sudah di-load dari spreadsheet)
-    // Kita mencocokkan input login (user) dengan kolom NISN
-    const siswaData = dataSiswaList.find(
-      (s) => String(s.nisn).trim() === String(user).trim(),
-    );
-
+    // Cari data di array lokal
+    const siswaData = dataSiswaList.find(s => String(s.nisn).trim() === String(user).trim());
+    
     const namaCard = document.getElementById("siswa-card-nama");
     const nisnCard = document.getElementById("siswa-card-nisn");
 
     if (siswaData) {
-      // Jika data ditemukan di database, tampilkan Nama dan NISN yang benar
+      // Tampilkan Nama Asli dan NISN
       if (namaCard) namaCard.innerText = siswaData.nama;
       if (nisnCard) nisnCard.innerText = "NISN: " + siswaData.nisn;
-      // Update juga nama di sidebar agar sesuai
       document.getElementById("current-username").innerText = siswaData.nama;
     } else {
-      // Jika data belum ditemukan/belum ter-load
-      if (namaCard) namaCard.innerText = "Siswa (NISN: " + user + ")";
+      // Jika data belum loading, beri instruksi
+      if (namaCard) namaCard.innerText = "Mohon refresh data...";
       if (nisnCard) nisnCard.innerText = "NISN: " + user;
     }
   }
@@ -160,18 +158,20 @@ function loadDataGuruDariServer() {
     })
     .catch((err) => console.warn("Catatan fetch guru:", err));
 }
+// Pastikan URL Anda sudah benar (tambahkan /exec di akhir)
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzSOJt0ldYg1iBwWlR77Qy1cslJKh6OmutDeFPJZpSrj7-uf2tXsqc3l0OofbQywUz8/exec";
 
 function loadDataSiswaDariServer() {
-  fetch(`${WEB_APP_URL}?action=getSiswa`, {
+  fetch(WEB_APP_URL + "?action=getSiswa", {
     method: "GET",
-    redirect: "follow"
+    mode: "cors" // Tambahkan mode cors
   })
     .then((res) => res.json())
     .then((data) => {
-      dataSiswaList = data;
-      renderTabelSiswa();
+      dataSiswaList = data; // Data masuk ke array global
+      console.log("Data siswa berhasil dimuat:", dataSiswaList);
     })
-    .catch((err) => console.warn("Catatan fetch siswa:", err));
+    .catch((err) => console.error("Gagal memuat data siswa:", err));
 }
 
 // --- FUNGSI FORM INPUT SISWA ---
