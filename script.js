@@ -40,7 +40,10 @@ function handleLogin(e) {
 
     if (dataSiswaList.length === 0) {
       if (namaCard) namaCard.innerText = "Memuat data...";
-      fetch(`${WEB_APP_URL}?action=getSiswa`, { method: "GET", mode: "cors" })
+      fetch(`${WEB_APP_URL}?action=getSiswa`, {
+        method: "GET",
+        redirect: "follow",
+      })
         .then((res) => res.json())
         .then((data) => {
           dataSiswaList = data;
@@ -128,7 +131,6 @@ setInterval(() => {
 
 // --- 4. INISIALISASI HALAMAN & GRAFIK ---
 window.addEventListener("DOMContentLoaded", () => {
-  // Inisialisasi Chart.js Grafik Statistik
   const ctx = document.getElementById("attendanceChart");
   if (ctx) {
     new Chart(ctx, {
@@ -150,12 +152,12 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Muat data server (dipanggil di dalam event listener yang benar)
+  // Muat data server
   loadDataGuruDariServer();
   loadDataSiswaDariServer();
 });
 
-// --- 5. AMBIL DATA DARI SERVER ---
+// --- 5. AMBIL DATA DARI SERVER (SISWA & GURU) ---
 function loadDataSiswaDariServer() {
   fetch(`${WEB_APP_URL}?action=getSiswa`, {
     method: "GET",
@@ -169,11 +171,24 @@ function loadDataSiswaDariServer() {
       if (statTotal) statTotal.innerText = data.length;
     })
     .catch((err) => {
-      // Jika masih terkena CORS tapi data masuk, kita abaikan atau gunakan fallback
       console.warn("Catatan fetch siswa:", err);
     });
 }
 
+function loadDataGuruDariServer() {
+  fetch(`${WEB_APP_URL}?action=getGuru`, {
+    method: "GET",
+    redirect: "follow",
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      dataGuruList = data;
+      renderTabelGuru();
+    })
+    .catch((err) => console.error("Gagal load guru:", err));
+}
+
+// --- RENDER TABEL ---
 function renderTabelSiswa() {
   const tbody = document.getElementById("table-siswa-body");
   if (!tbody) return;
@@ -199,34 +214,6 @@ function renderTabelSiswa() {
       </tr>
     `;
   });
-}
-
-function loadDataSiswaDariServer() {
-  fetch(`${WEB_APP_URL}?action=getSiswa`, {
-    method: "GET",
-    redirect: "follow",
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      dataSiswaList = data;
-      renderTabelSiswa();
-      const statTotal = document.getElementById("stat-total");
-      if (statTotal) statTotal.innerText = data.length;
-    })
-    .catch((err) => {
-      // Jika masih terkena CORS tapi data masuk, kita abaikan atau gunakan fallback
-      console.warn("Catatan fetch siswa:", err);
-    });
-}
-// --- FUNGSI LOAD & RENDER DATA GURU ---
-function loadDataGuruDariServer() {
-  fetch(`${WEB_APP_URL}?action=getGuru`, { method: "GET", mode: "cors" })
-    .then((res) => res.json())
-    .then((data) => {
-      dataGuruList = data;
-      renderTabelGuru();
-    })
-    .catch((err) => console.error("Gagal load guru:", err));
 }
 
 function renderTabelGuru() {
@@ -256,9 +243,20 @@ function renderTabelGuru() {
   });
 }
 
+function refreshDataSiswa() {
+  loadDataSiswaDariServer();
+  alert("Data siswa berhasil dimuat ulang dari server!");
+}
+
 function refreshDataGuru() {
   loadDataGuruDariServer();
   alert("Data guru berhasil dimuat ulang dari server!");
+}
+
+function refreshDashboard() {
+  loadDataSiswaDariServer();
+  loadDataGuruDariServer();
+  alert("Data dashboard berhasil diperbarui!");
 }
 
 // --- FUNGSI HAPUS LOKAL ---
@@ -271,11 +269,7 @@ function hapusGuru(index) {
   dataGuruList.splice(index, 1);
   renderTabelGuru();
 }
-function refreshDashboard() {
-  loadDataSiswaDariServer();
-  loadDataGuruDariServer();
-  alert("Data dashboard berhasil diperbarui!");
-}
+
 // --- 6. FUNGSI TAMBAH DATA (SISWA & GURU) ---
 function submitDataSiswa(e) {
   e.preventDefault();
@@ -296,10 +290,9 @@ function submitDataSiswa(e) {
       document.getElementById("form-tambah-siswa").reset();
       closeModalTambahSiswa();
 
-      // BERIKAN JEDA SEDIKIT LALU TARIK DATA TERBARU DARI SERVER
       setTimeout(() => {
         loadDataSiswaDariServer();
-      }, 1000); // Jeda 1 detik agar Google Sheets sempat memproses baris baru
+      }, 1000);
     })
     .catch((err) => {
       console.error("Gagal menyimpan data siswa:", err);
@@ -357,7 +350,6 @@ function initScanner() {
   }
 }
 
-// --- FUNGSI HELPER UNTUK MENGIRIM DATA ABSEN HASIL SCAN ---
 function kirimDataAbsenOtomatis(nisn) {
   const cleanNisn = String(nisn).trim();
   const siswa = dataSiswaList.find((s) => String(s.nisn).trim() === cleanNisn);
@@ -400,7 +392,7 @@ function kirimDataAbsenOtomatis(nisn) {
 }
 
 function switchCamera(mode) {
-  if (html5QrCode) html5QrCode.stop().then(() => startScanner(mode));
+  if (html5QrCode) html5QrCode.stop().then(() => initScanner());
 }
 
 // --- 8. FUNGSI MODAL & HELPERS ---
@@ -420,7 +412,7 @@ function backToDashboard() {
   switchView("dir-dashboard");
 }
 
-// Observer untuk Scanner (agar otomatis nyala saat menu dipilih)
+// Observer untuk Scanner
 const observer = new MutationObserver(() => initScanner());
 const scanSection = document.getElementById("dir-scan-absen");
 if (scanSection)
@@ -428,39 +420,3 @@ if (scanSection)
     attributes: true,
     attributeFilter: ["class"],
   });
-// --- FUNGSI RENDER TABEL SISWA ---
-function renderTabelSiswa() {
-  const tbody = document.getElementById("table-siswa-body");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-
-  if (dataSiswaList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 15px;">Belum ada data siswa.</td></tr>`;
-    return;
-  }
-
-  dataSiswaList.forEach((siswa, index) => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${siswa.nama}</td>
-        <td>${siswa.nisn}</td>
-        <td>${siswa.kelas}</td>
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="hapusSiswa(${index})">
-            <i class="fa-solid fa-trash"></i> Hapus
-          </button>
-        </td>
-      </tr>
-    `;
-  });
-}
-function refreshDataSiswa() {
-  loadDataSiswaDariServer();
-  alert("Data siswa berhasil dimuat ulang dari server!");
-}
-
-function refreshDataGuru() {
-  loadDataGuruDariServer();
-  alert("Data guru berhasil dimuat ulang dari server!");
-}
