@@ -1,6 +1,6 @@
 // Konfigurasi URL Web App Google Apps Script Anda
 const WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
+  "https://script.google.com/macros/s/AKfycbzSOJt0ldYg1iBwWlR77Qy1cslJKh6OmutDeFPJZpSrj7-uf2tXsqc3l0OofbQywUz8/exec";
 
 // Array penampung data lokal untuk tabel
 let dataSiswaList = [];
