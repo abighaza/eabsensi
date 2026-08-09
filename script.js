@@ -1,6 +1,6 @@
 // Konfigurasi URL Web App Google Apps Script Anda
 const WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbzSOJt0ldYg1iBwWlR77Qy1cslJKh6OmutDeFPJZpSrj7-uf2tXsqc3l0OofbQywUz8/exec";
+  "https://script.google.com/macros/s/AKfycbz8ahlEIloXEBAKgzZeEZHpWEHTnB4wIg2BEDfgPZPLnMkQmEybbn0vG3mgWONg5vbV/exec";
 
 // Array penampung data lokal untuk tabel
 let dataSiswaList = [];
@@ -17,28 +17,45 @@ function handleLogin(e) {
   currentUser = { role, user };
   document.getElementById("login-page").classList.add("hidden");
   document.getElementById("app-wrapper").classList.remove("hidden");
-  
-  // Update badge sidebar
   document.getElementById("user-role-badge").innerText = role.toUpperCase();
   document.getElementById("current-username").innerText = user;
 
-  // Jika siswa login, cari data nama berdasarkan NISN
+  // Jika role yang login adalah siswa, perbarui kartu identitas QR Code secara dinamis
   if (role === "siswa") {
-    // Cari data di array lokal
-    const siswaData = dataSiswaList.find(s => String(s.nisn).trim() === String(user).trim());
-    
     const namaCard = document.getElementById("siswa-card-nama");
     const nisnCard = document.getElementById("siswa-card-nisn");
 
-    if (siswaData) {
-      // Tampilkan Nama Asli dan NISN
-      if (namaCard) namaCard.innerText = siswaData.nama;
-      if (nisnCard) nisnCard.innerText = "NISN: " + siswaData.nisn;
-      document.getElementById("current-username").innerText = siswaData.nama;
+    // Fungsi internal untuk mencocokkan dan memperbarui tampilan kartu
+    const prosesDataSiswa = () => {
+      const siswaData = dataSiswaList.find(
+        (s) => String(s.nisn).trim() === String(user).trim(),
+      );
+
+      if (siswaData) {
+        if (namaCard) namaCard.innerText = siswaData.nama;
+        if (nisnCard) nisnCard.innerText = "NISN: " + siswaData.nisn;
+        document.getElementById("current-username").innerText = siswaData.nama;
+      } else {
+        if (namaCard) namaCard.innerText = "Siswa (" + user + ")";
+        if (nisnCard) nisnCard.innerText = "NISN: " + user;
+      }
+    };
+
+    // Jika data siswa masih kosong, fetch dulu dari server secara instan
+    if (dataSiswaList.length === 0) {
+      if (namaCard) namaCard.innerText = "Memuat data...";
+      fetch(`${WEB_APP_URL}?action=getSiswa`, { method: "GET", mode: "cors" })
+        .then((res) => res.json())
+        .then((data) => {
+          dataSiswaList = data;
+          prosesDataSiswa();
+        })
+        .catch((err) => {
+          console.error("Gagal memuat data siswa saat login:", err);
+          prosesDataSiswa();
+        });
     } else {
-      // Jika data belum loading, beri instruksi
-      if (namaCard) namaCard.innerText = "Mohon refresh data...";
-      if (nisnCard) nisnCard.innerText = "NISN: " + user;
+      prosesDataSiswa();
     }
   }
 
@@ -147,29 +164,21 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // --- FUNGSI AMBIL DATA DARI SPREADSHEET (GET) ---
 function loadDataGuruDariServer() {
-  fetch(`${WEB_APP_URL}?action=getGuru`, {
-    method: "GET",
-    redirect: "follow"
-  })
+  fetch(`${WEB_APP_URL}?action=getGuru`)
     .then((res) => res.json())
     .then((data) => {
       dataGuruList = data;
       renderTabelGuru();
     })
-    .catch((err) => console.warn("Catatan fetch guru:", err));
+    .catch((err) => console.error("Gagal memuat data guru:", err));
 }
-// Pastikan URL Anda sudah benar (tambahkan /exec di akhir)
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzSOJt0ldYg1iBwWlR77Qy1cslJKh6OmutDeFPJZpSrj7-uf2tXsqc3l0OofbQywUz8/exec";
 
 function loadDataSiswaDariServer() {
-  fetch(WEB_APP_URL + "?action=getSiswa", {
-    method: "GET",
-    mode: "cors" // Tambahkan mode cors
-  })
+  fetch(`${WEB_APP_URL}?action=getSiswa`)
     .then((res) => res.json())
     .then((data) => {
-      dataSiswaList = data; // Data masuk ke array global
-      console.log("Data siswa berhasil dimuat:", dataSiswaList);
+      dataSiswaList = data;
+      renderTabelSiswa();
     })
     .catch((err) => console.error("Gagal memuat data siswa:", err));
 }
