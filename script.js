@@ -150,7 +150,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Muat data server
+  // Muat data server (dipanggil di dalam event listener yang benar)
   loadDataGuruDariServer();
   loadDataSiswaDariServer();
 });
